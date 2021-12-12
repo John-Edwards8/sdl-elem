@@ -1,6 +1,7 @@
 requires 'Carton';
 requires 'DDP';
 requires 'SDL';
+requires 'SDL::Time';
 requires 'SDLx::App';
 requires 'DBIx::Class';
 requires 'DBD::Pg';

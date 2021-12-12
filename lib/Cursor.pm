@@ -3,7 +3,7 @@ package Cursor;
 use strict;
 use warnings;
 
-# use SDLx::Text;
+use SDLx::Text;
 
 use AppRect;
 use Color;
@@ -54,6 +54,12 @@ sub on_keydown {
 
 	$obj->{ x } +=  100;
 }
+
+# sub draw{
+# 	my( $obj ) =  shift;
+
+	
+# }
 
 
 1;

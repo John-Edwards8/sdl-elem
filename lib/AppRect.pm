@@ -16,6 +16,7 @@ use Dumper;
 use Rect;
 use Btn_del;
 use Btn;
+use Btn_Input;
 use Circle;
 use Btn_Circle;
 use Table;
@@ -75,7 +76,7 @@ sub new {
 
 	$app_rect->{ w } =  $app_w;
 	$app_rect->{ h } =  $app_h;
-	$app_rect->{ c } =  Color::new( 0, 0, 0, 0 );
+	$app_rect->{ c } =  Color->new( 0, 0, 0, 0 );
 
 
 	$APP =  $app_rect->{ app } =  SDLx::App->new(
@@ -95,6 +96,10 @@ sub new {
 	$app_rect->{ btn_del } =  Btn_del->new;
 	$app_rect->{ btn_del }{ parent } =  $app_rect;
 	weaken $app_rect->{ btn_del }{ parent };
+
+	$app_rect->{ btn_in } =  Btn_Input->new;
+	$app_rect->{ btn_in }{ parent } =  $app_rect;
+	weaken $app_rect->{ btn_in }{ parent };
 
 
 	## Load data
@@ -185,9 +190,9 @@ sub _observer {
 		$app_rect->{ event_state }{ $e->key_sym } =  1;
 
 		# TODO: send key event to active element
-		# if( my $h =  $app_rect->{ is_over } ) {
-		# 	$h->{ target }->on_keydown( $h, $e );
-		# }
+		if( my $h =  $app_rect->{ is_over } ) {
+			$h->{ target }->on_keydown( $h, $e );
+		}
 
 		my $act =  $app_rect->{ active };
 		if( my $bool =  $app_rect->on_keydown( $act, $e ) ) {
@@ -523,7 +528,7 @@ sub _is_over {
 	my( $app_rect, $x, $y ) =  @_;
 
 	my $over;
-	my @interface =  ( $app_rect->{ btn }, $app_rect->{ btn_del }, $app_rect->{ btn_c } );
+	my @interface =  ( $app_rect->{ btn }, $app_rect->{ btn_del }, $app_rect->{ btn_c }, $app_rect->{ btn_in } );
 	for my $shape ( $app_rect->{ children }->@*, @interface ) {
 		$over =  $shape->is_over( $x, $y )
 			or next;
@@ -570,7 +575,7 @@ sub draw {
 		0,
 		$app_rect->{ app }->width,
 		$app_rect->{ app }->height,
-	],[ 0, 0, 0, 0 ]);
+	], [ $app_rect->{ c }->get_color ] );
 	if( $app_rect->{ back } ) {
 		$app_rect->{ back }->draw;
 	}
@@ -579,6 +584,7 @@ sub draw {
 
 	$app_rect->{ btn     }->draw;
 	$app_rect->{ btn_del }->draw;
+	$app_rect->{ btn_in }->draw;
 	$app_rect->{ btn_c   }->draw;
 	if( $app_rect->{ first } ) {
 		$app_rect->{ first }->draw;

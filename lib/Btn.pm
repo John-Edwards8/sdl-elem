@@ -44,6 +44,8 @@ sub on_press {
 	my $rect =  Rect->new;
 	$rect->{ parent } =  $btn->{ parent };
 	weaken $rect->{ parent };
+
+	# DB::x;
 	my %x =  ( h => $rect->{h} );
 
 	$rect->{data}   =  \%x;

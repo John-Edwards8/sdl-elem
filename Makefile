@@ -11,7 +11,7 @@ LOCAL_LIBS      :=  ${LOCAL_LIBS}:${APP_ROOT}/local/lib/perl5
 export PERL5LIB :=  ${LOCAL_LIBS}:${PERL5LIB}
 
 
-DOCKER_CONTAINER :=  postgres-db
+DOCKER_CONTAINER :=  postgres-db13
 
 DEBUG_CMD = PERLDB_OPTS="white_box" PERL5DB="use DB::Hooks qw'::Terminal ::TraceVariable NonStop'" perl -d
 

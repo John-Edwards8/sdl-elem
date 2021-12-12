@@ -13,7 +13,7 @@ my $DB =  {
 	DRVR => 'Pg',
 	USER => 'gamer_n',
 	PASS => 'V74F3iV4xQ1NAcdp',
-	PORT => '5438',
+	PORT => '5432',
 	CLEAN_PASS => 'Zo4Tb7uuJUfJRNAZ',
 	CLEAN_USER => 'game_n_cleaner',
 };

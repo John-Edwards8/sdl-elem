@@ -32,8 +32,8 @@ sub new {
 sub draw {
 	my( $obj, $x, $y ) =  @_;
 
-	my $x    =  $obj->{x} + $x;
-	my $y    =  $obj->{y} + $y;
+	$x    =  $obj->{x} + $x;
+	$y    =  $obj->{y} + $y;
 	my $data =  $obj->{data};
 	my $type =  reftype $data;
 	##

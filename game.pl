@@ -17,7 +17,7 @@ use SDLx::Text;
 
 
 
-#Util::clear_database();
+# Util::clear_database();
 my $app_w = 1200; #размер экрана;
 my $app_h = 1000; #размер экрана;
 
