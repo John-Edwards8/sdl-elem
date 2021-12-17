@@ -9,7 +9,8 @@ use SDL::Events;
 use SDL::Video;
 
 use base 'Rect';
-use Cursor;
+# use Cursor;
+use NewCursor;
 use Variable;
 
 my $r =  255;
@@ -44,18 +45,70 @@ my $map = {
 	x => \&add_sym,
 	y => \&add_sym,
 	z => \&add_sym,
-	space         => \&add_sym,
-	backspace     => \&del_sym,
+	1 => \&add_sym,
+	2 => \&add_sym,
+	3 => \&add_sym,
+	4 => \&add_sym,
+	5 => \&add_sym,
+	6 => \&add_sym,
+	7 => \&add_sym,
+	8 => \&add_sym,
+	9 => \&add_sym,
+	0 => \&add_sym,
+	"+" => \&add_sym,
+	"," => \&add_sym,
+	"/" => \&add_sym,
+	"'" => \&add_sym,
+	"[" => \&add_sym,
+	"]" => \&add_sym,
+	"=" => \&add_sym,
+	"-" => \&add_sym,
+	'`' => \&add_sym,
+	"." => \&add_sym,
+	";" => \&add_sym,
+	":" => \&add_sym,
+	'"' => \&add_sym,
+	"{" => \&add_sym,
+	"}" => \&add_sym,
+	"*" => \&add_sym,
+	"'\'" => \&add_sym,
+	"escape"      => \&add_sym,
+	"space"       => \&add_sym,
+	"tab"         => \&add_sym,
+	"backspace"   => \&del_sym,
 	"left ctrl"   => sub{},
 	"right ctrl"  => sub{},
 	"caps lock"   => sub{},
-	"left shift"  => sub{},
-	"right shift" => sub{},
+	"left shift"  => \&modify,
+	"right shift" => \&modify,
 	"left alt"    => sub{},
 	"right alt"   => sub{},
-	"left"     => \&cursor,
-	"right"    => \&cursor,
+	"left"        => \&navigation,
+	"right"       => \&navigation,
 
+};
+
+my $shmap = {
+	1 => "!",
+	2 => "@",
+	3 => "#",
+	4 => "\$",
+	5 => "%",
+	6 => "^",
+	7 => "&",
+	8 => "*",
+	9 => "(",
+	0 => ")",
+	"-" => "_",
+	"=" => "+",
+	"[" => "{",
+	"]" => "}",
+	"," => "<",
+	"." => ">",
+	"/" => "?",
+	";" => ":",
+	'`' => "~",
+	"'" => '"',
 };
 
 # sub combinations{
@@ -75,14 +128,16 @@ my $map = {
 # }
 
 
-sub cursor {
+sub navigation {
 	my( $if, $e ) =  @_;
 
 	if( $e->key_sym == SDLK_LEFT() ){
-		$if->{ pos } -= 1;
+		$if->{ pos } <= (scalar $if->{ text }->@* % 5)   or return;
+		$if->{ pos } += 1;
 	}
 	if( $e->key_sym == SDLK_RIGHT() ){
-		$if->{ pos } += 1;
+		$if->{ pos } >= 0   or return;
+		$if->{ pos } -= 1;
 	}
 }
 
@@ -90,64 +145,73 @@ sub add_sym{
 	my( $if, $e ) =  @_;
 
 	if( length ( SDL::Events::get_key_name( $e->key_sym ) ) == 1 ){
-		my $l =  modify( $e );
+		my $l =  modify( $if, $e );
 
 		$l ne ""   or return;
 
 		splice $if->{ text }->@*, $if->{ text }->@*, 0, $l;
-	}elsif( SDL::Events::get_key_name( $e->key_sym ) eq 'space' ){
+	}elsif( $e->key_sym == SDLK_SPACE ){
 		splice $if->{ text }->@*, $if->{ text }->@*, 0, ' ';
+	}elsif( $e->key_sym == SDLK_TAB ){
+		splice $if->{ text }->@*, $if->{ text }->@*, 0, '    ';
 	}
 
 }
 
 sub del_sym{
-	my( $if ) =  shift;
+	my( $if, $e ) =  @_;
 
-	splice( $if->{ text }->@*, -1, 1 );
+	if( $e->key_sym == SDLK_BACKSPACE ){
+
+		$if->{ pos } -= 1;		
+		splice( $if->{ text }->@*, -1, 1 );
+	}
 }
 
 sub modify{
-	my( $e ) =  @_;
-
-	SDL::Events::pump_events;
+	my( $if, $e ) =  @_;
  
 	my $mod_state =  SDL::Events::get_mod_state();
 	my $letter    =  SDL::Events::get_key_name( $e->key_sym );
+
+
 
 	if( $mod_state & KMOD_CTRL ){
 		# \&combinations( $e );
 
 		return "";
 	}
+	if( $mod_state & KMOD_CAPS ){
 
-	$mod_state & KMOD_SHIFT   or return $letter;
-	return uc $letter;
+		$mod_state & KMOD_SHIFT   or return uc $letter;
+		return $letter;
+	}
+	if(	$mod_state & KMOD_SHIFT  &&  $shmap->{ $letter } ){
+
+		return $shmap->{ $letter };
+	}
+	$mod_state & KMOD_SHIFT   and return uc $letter;
+	return $letter;
 }
 
-# sub pos_corection{
-# 	my( $if ) =  @_;
+sub pos_corection{
+	my( $if, $e ) =  @_;
 
-# 	my $e =  SDL::Event->new();
-# 	SDL::Events::pump_events();
-# 	SDL::Events::push_event($e);
-# 	SDL::Events::poll_event($e);
-
-# 	# DB::x   if scalar $if->{text}->@* % 5 == 0;
-
-# 	if( $e->type == SDL_KEYDOWN() ){
-# 		if( ( scalar $if->{text}->@* ) % 5 == 0 ){
-# 			$if->{ pos } += 3;
-# 		}
-# 	}
+	$e->type & SDL_KEYUP   or return;
+	$e->key_sym != SDLK_BACKSPACE   or return;
+	$e->key_sym != SDLK_DELETE   or return;
+	# DB::x;
+	if( scalar $if->{text}->@*  % 5 == 0 ){
+		$if->{ pos } += 4;
+	}
 	
-# }
+}
 
 
 sub new_text{
-	my( $if ) =  @_;
+	my( $if, $e ) =  @_;
 
-	# &pos_corection( $if );
+	&pos_corection( @_ );
 
 	my $val =  join '', $if->{ text }->@*;
 
@@ -166,6 +230,7 @@ sub new {
 
 	$if->{status}     =  'service';
 	$if->{cursor_pos} =  0;
+	$if->{pos}        =  0;
 	$if->{h}          =  30;
 	$if->{w}          =  70;
 	$if->{x}          =  200;
@@ -184,23 +249,29 @@ sub draw {
 	$dy ||= 0;
 
 
-	$if->SUPER::draw();
+	# $if->SUPER::draw();
 
-	$if->{ text }   or return;
+	my $surface = SDLx::Surface->display( width => $if->{w}, height => $if->{h});
+	$surface->draw_rect( [ $if->{x}, $if->{y}, $if->{w}-4, $if->{h}-4 ], [ 255, 255, 255, 255 ] );
 
-	my $message =  &new_text( $if );
- 	my $virt =  SDLx::Surface->display( width => 400, height => 200, flags=> SDL_HWSURFACE, depth=>32);
+	$if->{ message }   or return;
+
+	my $x = $if->{x} + 2 - $if->{ pos }*8;
+	my $y = $if->{y} + 5;
+
+	my $message =  $if->{ message };
+ 	# my $virt =  SDLx::Surface->display( width => 400, height => 200, flags=> SDL_HWSURFACE, depth=>32);
 	# my $virt =  SDLx::Surface->new( width=> 400, height=>200, flags=> SDL_SWSURFACE, depth=>32 );
-	my $screen =  AppRect::SCREEN();
-
-	$message->write_xy( $virt, 0, 600 );
+	# my $screen =  AppRect::SCREEN();
+	
+	$message->write_xy( $surface, $x, $y );
 
 	# DB::x;
 
-	$virt->blit( $screen, 
-		SDL::Rect->new( 0 + $if->{ pos }*8,      600, $if->{w}, $if->{h} ),
-		SDL::Rect->new( $if->{x}, $if->{y}, $if->{w}, $if->{h} ),
-	);
+	# $surface->blit( $screen, 
+	# 	SDL::Rect->new( $x, $y, $if->{w}, $if->{h}+2 ),
+	# 	SDL::Rect->new( $if->{x}, $if->{y}-2, $if->{w}, $if->{h} ),
+	# );
 
 
 	# my $x =  $if->{x} + $dx;
@@ -218,21 +289,40 @@ sub draw {
 	# # SDL::Video::set_clip_rect( $surface, SDL::Rect->new( $x, $y, $if->{w}-4, $if->{h}-4) );
 }
 
-## sub on_press {
-# 	my( $if, $h, $e ) =  @_;
+# # sub on_press {
+# # my( $if, $h, $e ) =  @_;
+# # DB::x;
+# # my $x =  $if->{ x } + 10;
+# # $if->{ cursor } =  Cursor->new( $if->{x}+10, $if->{y}, 4, $if->{h} );
+# # $h->{ app }->refresh_over( $e->motion_x, $e->motion_y );
+# # }
 
-# 	# DB::x;
+sub on_press{
+ 	my( $if, $h, $e ) =  @_;
 
-# 	my $x =  $if->{ x } + 10;
-# 	$if->{ cursor } =  Cursor->new( $if->{x}+10, $if->{y}, 4, $if->{h} );
+ 	$if->{ cursor } =  NewCursor->new( 0 + $if->{ pos }*8, 600, 4, $if->{h} );
 
-# 	# $h->{ app }->refresh_over( $e->motion_x, $e->motion_y );
-# }
+	push $if->{ children }->@*, $if->{ cursor };
+
+	# DB::x;
+	# $cursor->NewCursor::draw();
+
+	# $h->{ app }->refresh_over( $e->motion_x, $e->motion_y );
+}
+
 
 sub on_keydown {
 	my( $if, $h, $e ) =  @_;
 
+	# DB::x;
+
+	$if->{ cursor }   or return;
+
 	$map->{ SDL::Events::get_key_name( $e->key_sym ) }->( $if, $e );
+
+	$if->{ message } =  &new_text( $if, $e );
+	# DB::x;
+	# $if->{ cursor }->on_keydown();
 
 }
 

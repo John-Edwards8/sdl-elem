@@ -77,7 +77,7 @@ sub pause_handler {
 	}
 
 	elsif($event->type == SDL_KEYDOWN) {
-		if($event->key_sym == SDLK_SPACE) {
+		if($event->key_sym == SDLK_F10) {
 			return 1 if $app->paused;
 
 			$app->pause(\&pause_handler);
