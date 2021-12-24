@@ -85,6 +85,21 @@ my $map = {
 	"right alt"   => sub{},
 	"left"        => \&navigation,
 	"right"       => \&navigation,
+	"[1]" => \&numpad,
+	"[2]" => \&numpad,
+	"[3]" => \&numpad,
+	"[4]" => \&numpad,
+	"[5]" => \&numpad,
+	"[6]" => \&numpad,
+	"[7]" => \&numpad,
+	"[8]" => \&numpad,
+	"[9]" => \&numpad,
+	"[0]" => \&numpad,
+	"[+]" => \&numpad,
+	"[/]" => \&numpad,
+	"[-]" => \&numpad,
+	"[*]" => \&numpad,
+	"[.]" => \&numpad,
 
 };
 
@@ -118,25 +133,39 @@ my $shmap = {
  
 # 	my $letter    =  SDL::Events::get_key_name( $e->key_sym );
 
-
-# 	if( $e->key_sym == SDLK_c() ){
-#         SDL_SetClipboardText(  );
-#     }
-#     if( $e->key_sym == SDLK_v() ){
-#         return SDL_GetClipboardText();
-#     }
+# # 	if( $e->key_sym == SDLK_c() ){
+# #         SDL_SetClipboardText(  );
+# #     }
+# #     if( $e->key_sym == SDLK_v() ){
+# #         return SDL_GetClipboardText();
+# #     }
 # }
+
+sub numpad{
+	my( $if, $e ) =  @_;
+
+	DB::x;
+
+	my $l =	SDL::Events::get_key_name( $e->key_sym );
+
+	my  @elems =  split( //, $l );
+	pop( @elems );
+	shift( @elems );
+
+	splice $if->{ text }->@*, $if->{ text }->@*, 0, join( '', @elems );
+}
 
 
 sub navigation {
 	my( $if, $e ) =  @_;
 
 	if( $e->key_sym == SDLK_LEFT() ){
+		$if->{ pos } > 0  or return;
 		$if->{ pos } <= (scalar $if->{ text }->@* % 5)   or return;
 		$if->{ pos } += 1;
 	}
 	if( $e->key_sym == SDLK_RIGHT() ){
-		$if->{ pos } >= 0   or return;
+		$if->{ pos } > 0   or return;
 		$if->{ pos } -= 1;
 	}
 }
@@ -154,7 +183,11 @@ sub add_sym{
 		splice $if->{ text }->@*, $if->{ text }->@*, 0, ' ';
 	}elsif( $e->key_sym == SDLK_TAB ){
 		splice $if->{ text }->@*, $if->{ text }->@*, 0, '    ';
+	}elsif( $e->key_sym == SDLK_ESCAPE ){
+		exit;
 	}
+
+	$if->{ct} += 1;
 
 }
 
@@ -162,9 +195,11 @@ sub del_sym{
 	my( $if, $e ) =  @_;
 
 	if( $e->key_sym == SDLK_BACKSPACE ){
-
-		$if->{ pos } -= 1;		
+		$if->{ text }->@* > 0   or return;
 		splice( $if->{ text }->@*, -1, 1 );
+
+		$if->{ pos } >= 0   or return;
+		$if->{ pos } -= 1;		
 	}
 }
 
@@ -190,8 +225,10 @@ sub modify{
 
 		return $shmap->{ $letter };
 	}
-	$mod_state & KMOD_SHIFT   and return uc $letter;
-	return $letter;
+	if(	$mod_state & KMOD_SHIFT ){
+		return uc $letter;	
+	}
+	return $letter
 }
 
 sub pos_corection{
@@ -201,7 +238,7 @@ sub pos_corection{
 	$e->key_sym != SDLK_BACKSPACE   or return;
 	$e->key_sym != SDLK_DELETE   or return;
 	# DB::x;
-	if( scalar $if->{text}->@*  % 5 == 0 ){
+	if( scalar $if->{ct}  % 5 == 0 ){
 		$if->{ pos } += 4;
 	}
 	
@@ -211,12 +248,14 @@ sub pos_corection{
 sub new_text{
 	my( $if, $e ) =  @_;
 
+	defined( $if->{ text } )  or return;
+
 	&pos_corection( @_ );
 
-	my $val =  join '', $if->{ text }->@*;
+	my $val   =  join '', $if->{ text }->@*;
 
 	return SDLx::Text->new(
-			color 	=> [ 255, 0, 0 ],
+			color 	=> [ 0, 0, 0 ],
 			size  	=> 16,
 			h_align => 'left',
 			text  	=> $val ."",
@@ -229,13 +268,14 @@ sub new {
 	my $if  =  $input->SUPER::new(@_);
 
 	$if->{status}     =  'service';
+	$if->{ct}		  =  0;
 	$if->{cursor_pos} =  0;
 	$if->{pos}        =  0;
 	$if->{h}          =  30;
 	$if->{w}          =  70;
 	$if->{x}          =  200;
 	$if->{y}          =  200;
-	$if->{highlight}  =  Color->new( 0, 0, 255, 255 );
+	# $if->{highlight}  =  Color->new( 0, 0, 255, 255 );
 
 	$if->set_color( $r, $g, $b, $a );
 
@@ -248,16 +288,17 @@ sub draw {
 	$dx ||= 0;
 	$dy ||= 0;
 
-
-	# $if->SUPER::draw();
-
 	my $surface = SDLx::Surface->display( width => $if->{w}, height => $if->{h});
 	$surface->draw_rect( [ $if->{x}, $if->{y}, $if->{w}-4, $if->{h}-4 ], [ 255, 255, 255, 255 ] );
+
+	$if->SUPER::propagate( "draw", $if );
 
 	$if->{ message }   or return;
 
 	my $x = $if->{x} + 2 - $if->{ pos }*8;
 	my $y = $if->{y} + 5;
+
+	DB::x   if  scalar $if->{ct}  % 5 == 0;
 
 	my $message =  $if->{ message };
  	# my $virt =  SDLx::Surface->display( width => 400, height => 200, flags=> SDL_HWSURFACE, depth=>32);
@@ -300,12 +341,13 @@ sub draw {
 sub on_press{
  	my( $if, $h, $e ) =  @_;
 
- 	$if->{ cursor } =  NewCursor->new( 0 + $if->{ pos }*8, 600, 4, $if->{h} );
+ 	if( defined( $if->{ cursor } ) ){ return; }
 
-	push $if->{ children }->@*, $if->{ cursor };
+ 	$if->{ cursor } = 1; 
+
+	push $if->{ children }->@*, NewCursor->new( $if->{x}, $if->{y} - 1, 2, $if->{h} - 4);
 
 	# DB::x;
-	# $cursor->NewCursor::draw();
 
 	# $h->{ app }->refresh_over( $e->motion_x, $e->motion_y );
 }
@@ -314,15 +356,13 @@ sub on_press{
 sub on_keydown {
 	my( $if, $h, $e ) =  @_;
 
-	# DB::x;
-
 	$if->{ cursor }   or return;
 
 	$map->{ SDL::Events::get_key_name( $e->key_sym ) }->( $if, $e );
 
 	$if->{ message } =  &new_text( $if, $e );
-	# DB::x;
-	# $if->{ cursor }->on_keydown();
+
+	$if->SUPER::propagate( "on_keydown" );
 
 }
 

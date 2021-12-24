@@ -43,7 +43,7 @@ sub new {
 
 	$obj->set_color( 255, 0, 0, 255 );
 
-	$obj->{ timer_id } =  SDL::Time::add_timer( $BLINK_TIMER, 'Cursor::_blink_timer' );
+	$obj->{ timer_id } =  SDL::Time::add_timer( $BLINK_TIMER, 'NewCursor::_blink_timer' );
 	AppRect::SCREEN()->add_event_handler( sub{ _on_blink( @_, $obj ) } );
 
 	# DB::x;
@@ -58,17 +58,39 @@ sub on_keydown {
 
 	# DB::x;
 
-	$obj->{ x } +=  100;
+	$obj->{ x } +=  4;
 }
 
 sub draw{
-	my( $obj ) =  shift;
+	my( $obj, $if ) =  @_;
+
+	my $screen =  AppRect::SCREEN();
 
 	# DB::x;
-
-	$obj->SUPER::draw( @_ );
-
 	
+	my @color  =  $obj->{ c }->get_color();
+	if( $obj->{x} >= $if->{x}+$if->{w} ){
+		$screen->draw_rect([
+			$if->{x}+$if->{w} -1,
+			$if->{y},
+			$obj->{w},
+			$obj->{h},
+		],[
+			@color
+		]);	
+	}else{
+		$screen->draw_rect([
+			$obj->{x} +1,
+			$if->{y},
+			$obj->{w},
+			$obj->{h},
+		],[
+			@color
+		]);
+	}
+	
+	# $obj->propagate( draw => $obj->{x}, $obj->{y} );
+
 }
 
 
